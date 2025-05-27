@@ -128,3 +128,43 @@ The package.json file is the metadata and configuration file for a Node.js proje
 - Lists dependencies (libraries the project needs)
 - Specifies scripts (commands you run with npm run)
 - Describes the environment (Node version, module format, etc.)
+
+5. Set up the environment (Docker, virtualenv, etc.)
+### Needs
+- node 22
+- python 3.10
+- docker
+- npm
+
+### Create virtualenv
+- Create a `.dockerignore` file to exclude unnecessary files from the Docker build context.
+
+- Create a virtualenv
+```py
+python -m venv env # for Windows or
+py -3.10 -m venv env # for Windows
+virtualenv env # for Mac/Linux or;
+virtualenv env -p python3 # for Mac/Linux
+```
+
+- Add env/ to the dockerignore and gitignore files
+
+- Activate scripts:
+```bash
+.\env\Scripts\activate  # for Windows
+source env/bin/activate  # for MAC/Linux
+```
+- Run the app locally:
+```sh
+npm install
+```
+
+### Create a Dockerfile
+- Use docker linting locally; hadolint
+- Build using docker
+```sh
+docker build -t stefanorafe/app:v1 .
+docker login
+docker push stefanorafe/app:v1
+docker run --name my_app -d -p 3000:3000 stefanorafe/app:v1
+```

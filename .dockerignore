@@ -1,0 +1,11 @@
+.DS_Store
+.git/
+.sass-cache
+dist
+docs
+logs
+node_modules/
+Dockerfile
+.dockerignore
+.gitignore
+env
