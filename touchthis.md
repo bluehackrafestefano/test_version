@@ -316,3 +316,216 @@ app.use((req, res, next) => {
 ```js
     logger.info(`Server running on port ${PORT}`);
 ```
+
+
+### Prometheus node exporter
+1. Install prom-client
+npm install prom-client
+2. Add a /metrics endpoint to the backend/app.js
+```js
+const client = require('prom-client');
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+// Expose /metrics endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
+// Optional: custom metric example
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status'],
+});
+register.registerMetric(httpRequestCounter);
+
+// Middleware to increment the counter
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    httpRequestCounter.inc({ method: req.method, route: req.originalUrl, status: res.statusCode });
+  });
+  next();
+});
+```
+- You can get your Prometheus metrics by visiting:
+http://localhost:3099/metrics
+
+Example output:
+```
+# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.
+# TYPE process_cpu_user_seconds_total counter
+process_cpu_user_seconds_total 29.063
+
+# HELP process_cpu_system_seconds_total Total system CPU time spent in seconds.
+# TYPE process_cpu_system_seconds_total counter
+process_cpu_system_seconds_total 0.953
+
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 30.016
+
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1748529858
+
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 115613696
+
+# HELP nodejs_eventloop_lag_seconds Lag of event loop in seconds.
+# TYPE nodejs_eventloop_lag_seconds gauge
+nodejs_eventloop_lag_seconds 0
+
+# HELP nodejs_eventloop_lag_min_seconds The minimum recorded event loop delay.
+# TYPE nodejs_eventloop_lag_min_seconds gauge
+nodejs_eventloop_lag_min_seconds 0.00991232
+
+# HELP nodejs_eventloop_lag_max_seconds The maximum recorded event loop delay.
+# TYPE nodejs_eventloop_lag_max_seconds gauge
+nodejs_eventloop_lag_max_seconds 3.061841919
+
+# HELP nodejs_eventloop_lag_mean_seconds The mean of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_mean_seconds gauge
+nodejs_eventloop_lag_mean_seconds 0.08344710868292683
+
+# HELP nodejs_eventloop_lag_stddev_seconds The standard deviation of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_stddev_seconds gauge
+nodejs_eventloop_lag_stddev_seconds 0.15226345537488747
+
+# HELP nodejs_eventloop_lag_p50_seconds The 50th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p50_seconds gauge
+nodejs_eventloop_lag_p50_seconds 0.072024063
+
+# HELP nodejs_eventloop_lag_p90_seconds The 90th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p90_seconds gauge
+nodejs_eventloop_lag_p90_seconds 0.104595455
+
+# HELP nodejs_eventloop_lag_p99_seconds The 99th percentile of the recorded event loop delays.
+# TYPE nodejs_eventloop_lag_p99_seconds gauge
+nodejs_eventloop_lag_p99_seconds 0.164888575
+
+# HELP nodejs_active_resources Number of active resources that are currently keeping the event loop alive, grouped by async resource type.
+# TYPE nodejs_active_resources gauge
+nodejs_active_resources{type="FSReqCallback"} 1
+nodejs_active_resources{type="PipeWrap"} 5
+nodejs_active_resources{type="TCPServerWrap"} 1
+nodejs_active_resources{type="ProcessWrap"} 3
+nodejs_active_resources{type="TCPSocketWrap"} 1
+nodejs_active_resources{type="Timeout"} 4
+nodejs_active_resources{type="Immediate"} 2
+
+# HELP nodejs_active_resources_total Total number of active resources.
+# TYPE nodejs_active_resources_total gauge
+nodejs_active_resources_total 17
+
+# HELP nodejs_active_handles Number of active libuv handles grouped by handle type. Every handle type is C++ class name.
+# TYPE nodejs_active_handles gauge
+nodejs_active_handles{type="Socket"} 6
+nodejs_active_handles{type="Server"} 1
+nodejs_active_handles{type="ChildProcess"} 3
+
+# HELP nodejs_active_handles_total Total number of active handles.
+# TYPE nodejs_active_handles_total gauge
+nodejs_active_handles_total 10
+
+# HELP nodejs_active_requests Number of active libuv requests grouped by request type. Every request type is C++ class name.
+# TYPE nodejs_active_requests gauge
+nodejs_active_requests{type="FSReqCallback"} 1
+
+# HELP nodejs_active_requests_total Total number of active requests.
+# TYPE nodejs_active_requests_total gauge
+nodejs_active_requests_total 1
+
+# HELP nodejs_heap_size_total_bytes Process heap size from Node.js in bytes.
+# TYPE nodejs_heap_size_total_bytes gauge
+nodejs_heap_size_total_bytes 69873664
+
+# HELP nodejs_heap_size_used_bytes Process heap size used from Node.js in bytes.
+# TYPE nodejs_heap_size_used_bytes gauge
+nodejs_heap_size_used_bytes 44872024
+
+# HELP nodejs_external_memory_bytes Node.js external memory size in bytes.
+# TYPE nodejs_external_memory_bytes gauge
+nodejs_external_memory_bytes 22374833
+
+# HELP nodejs_heap_space_size_total_bytes Process heap space size total from Node.js in bytes.
+# TYPE nodejs_heap_space_size_total_bytes gauge
+nodejs_heap_space_size_total_bytes{space="read_only"} 0
+nodejs_heap_space_size_total_bytes{space="new"} 33554432
+nodejs_heap_space_size_total_bytes{space="old"} 28078080
+nodejs_heap_space_size_total_bytes{space="code"} 1572864
+nodejs_heap_space_size_total_bytes{space="shared"} 0
+nodejs_heap_space_size_total_bytes{space="trusted"} 3170304
+nodejs_heap_space_size_total_bytes{space="new_large_object"} 0
+nodejs_heap_space_size_total_bytes{space="large_object"} 3342336
+nodejs_heap_space_size_total_bytes{space="code_large_object"} 155648
+nodejs_heap_space_size_total_bytes{space="shared_large_object"} 0
+nodejs_heap_space_size_total_bytes{space="trusted_large_object"} 0
+
+# HELP nodejs_heap_space_size_used_bytes Process heap space size used from Node.js in bytes.
+# TYPE nodejs_heap_space_size_used_bytes gauge
+nodejs_heap_space_size_used_bytes{space="read_only"} 0
+nodejs_heap_space_size_used_bytes{space="new"} 10021752
+nodejs_heap_space_size_used_bytes{space="old"} 27212264
+nodejs_heap_space_size_used_bytes{space="code"} 1361408
+nodejs_heap_space_size_used_bytes{space="shared"} 0
+nodejs_heap_space_size_used_bytes{space="trusted"} 2891928
+nodejs_heap_space_size_used_bytes{space="new_large_object"} 0
+nodejs_heap_space_size_used_bytes{space="large_object"} 3253408
+nodejs_heap_space_size_used_bytes{space="code_large_object"} 138304
+nodejs_heap_space_size_used_bytes{space="shared_large_object"} 0
+nodejs_heap_space_size_used_bytes{space="trusted_large_object"} 0
+
+# HELP nodejs_heap_space_size_available_bytes Process heap space size available from Node.js in bytes.
+# TYPE nodejs_heap_space_size_available_bytes gauge
+nodejs_heap_space_size_available_bytes{space="read_only"} 0
+nodejs_heap_space_size_available_bytes{space="new"} 6472840
+nodejs_heap_space_size_available_bytes{space="old"} 320072
+nodejs_heap_space_size_available_bytes{space="code"} 112960
+nodejs_heap_space_size_available_bytes{space="shared"} 0
+nodejs_heap_space_size_available_bytes{space="trusted"} 220664
+nodejs_heap_space_size_available_bytes{space="new_large_object"} 16777216
+nodejs_heap_space_size_available_bytes{space="large_object"} 0
+nodejs_heap_space_size_available_bytes{space="code_large_object"} 0
+nodejs_heap_space_size_available_bytes{space="shared_large_object"} 0
+nodejs_heap_space_size_available_bytes{space="trusted_large_object"} 0
+
+# HELP nodejs_version_info Node.js version info.
+# TYPE nodejs_version_info gauge
+nodejs_version_info{version="v22.16.0",major="22",minor="16",patch="0"} 1
+
+# HELP nodejs_gc_duration_seconds Garbage collection duration by kind, one of major, minor, incremental or weakcb.
+# TYPE nodejs_gc_duration_seconds histogram
+nodejs_gc_duration_seconds_bucket{le="0.001",kind="incremental"} 1
+nodejs_gc_duration_seconds_bucket{le="0.01",kind="incremental"} 1
+nodejs_gc_duration_seconds_bucket{le="0.1",kind="incremental"} 1
+nodejs_gc_duration_seconds_bucket{le="1",kind="incremental"} 1
+nodejs_gc_duration_seconds_bucket{le="2",kind="incremental"} 1
+nodejs_gc_duration_seconds_bucket{le="5",kind="incremental"} 1
+nodejs_gc_duration_seconds_bucket{le="+Inf",kind="incremental"} 1
+nodejs_gc_duration_seconds_sum{kind="incremental"} 0.0009644000008702278
+nodejs_gc_duration_seconds_count{kind="incremental"} 1
+nodejs_gc_duration_seconds_bucket{le="0.001",kind="major"} 0
+nodejs_gc_duration_seconds_bucket{le="0.01",kind="major"} 1
+nodejs_gc_duration_seconds_bucket{le="0.1",kind="major"} 1
+nodejs_gc_duration_seconds_bucket{le="1",kind="major"} 1
+nodejs_gc_duration_seconds_bucket{le="2",kind="major"} 1
+nodejs_gc_duration_seconds_bucket{le="5",kind="major"} 1
+nodejs_gc_duration_seconds_bucket{le="+Inf",kind="major"} 1
+nodejs_gc_duration_seconds_sum{kind="major"} 0.0062836000025272365
+nodejs_gc_duration_seconds_count{kind="major"} 1
+nodejs_gc_duration_seconds_bucket{le="0.001",kind="minor"} 107
+nodejs_gc_duration_seconds_bucket{le="0.01",kind="minor"} 263
+nodejs_gc_duration_seconds_bucket{le="0.1",kind="minor"} 281
+nodejs_gc_duration_seconds_bucket{le="1",kind="minor"} 281
+nodejs_gc_duration_seconds_bucket{le="2",kind="minor"} 281
+nodejs_gc_duration_seconds_bucket{le="5",kind="minor"} 281
+nodejs_gc_duration_seconds_bucket{le="+Inf",kind="minor"} 281
+nodejs_gc_duration_seconds_sum{kind="minor"} 0.7629821000173689
+nodejs_gc_duration_seconds_count{kind="minor"} 281
+
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+```

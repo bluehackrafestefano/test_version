@@ -5,6 +5,9 @@ const cookieParser = require('cookie-parser');
 const fileUpload = require('express-fileupload');
 const userRoute = require('../backend/routes/userRoute');
 const logger = require('./logger');
+const client = require('prom-client');
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
 
 const app = express();
 
@@ -32,6 +35,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Expose /metrics endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
+
 app.use((req, res, next) => {
   logger.warn(`404 Not Found: ${req.method} ${req.originalUrl}`);
   res.status(404).json({ error: 'Not Found' });
@@ -49,5 +58,21 @@ if (process.env.NODE_ENV === 'production') {
         res.send('Server is Running! 🚀');
     });
 }
+
+// Optional: custom metric example
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status'],
+});
+register.registerMetric(httpRequestCounter);
+
+// Middleware to increment the counter
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    httpRequestCounter.inc({ method: req.method, route: req.originalUrl, status: res.statusCode });
+  });
+  next();
+});
 
 module.exports = app;
