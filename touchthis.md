@@ -529,3 +529,6 @@ nodejs_gc_duration_seconds_count{kind="minor"} 281
 # HELP http_requests_total Total number of HTTP requests
 # TYPE http_requests_total counter
 ```
+
+- ![monitor on grafana](image.png)
+https://grafana.com/grafana/dashboards/1860-node-exporter-full/
