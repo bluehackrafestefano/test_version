@@ -135,7 +135,10 @@ The package.json file is the metadata and configuration file for a Node.js proje
 - python 3.10
 - docker
 - npm
+- go version shows at least go1.20.x.
 
+- Create .env file
+- 
 ### Create virtualenv
 - Create a `.dockerignore` file to exclude unnecessary files from the Docker build context.
 
@@ -168,3 +171,99 @@ docker login
 docker push stefanorafe/app:v1
 docker run --name my_app -d -p 3000:3000 stefanorafe/app:v1
 ```
+
+
+### Terraform
+
+- Create terraform/
+terraform init
+- Create main.tf file
+- aws provider and ec2 instance add
+terraform fmt
+terraform validate
+terraform plan -out plan.txt
+terraform apply
+terraform destroy
+- add test/ to main dir
+- add ec2_test.go
+- initialize go in proj dir
+```sh
+go mod init test_version
+go get github.com/gruntwork-io/terratest/modules/terraform
+go get github.com/gruntwork-io/terratest/modules/aws
+go get github.com/aws/aws-sdk-go/service/ec2
+go get github.com/stretchr/testify/assert
+go test ./test -v
+go test ./test -v -count=1
+```
+
+### AWS CLI
+
+### s3
+aws s3 ls
+aws s3api create-bucket --bucket my-task-bucket-12355
+aws s3 cp ./test2.txt s3://my-task-bucket-12355
+aws s3 sync . s3://my-task-bucket-12355 --exclude "env/*" --exclude "node_modules/*"
+aws s3api list-objects --bucket my-task-bucket-12355
+aws s3 rm --recursive s3://my-task-bucket-12355
+aws s3api delete-bucket --bucket my-task-bucket-12355
+
+### ec2
+aws ec2 run-instances --image-id ami-0953476d60561c955 --count 1 --instance-type t2.micro --key-name rafe --security-group-ids sg-072cefb3b4a4b6732 --profile cw --region us-east-1 --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=MyInstance}]'
+
+aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --profile cw --region us-east-1 --output table
+
+aws ec2 describe-instances --filters "Name=instance-state-name,Values=running" --profile cw --region us-east-1 --output table | grep InstanceId
+
+aws ec2 terminate-instances --instance-ids i-085c41f55d634aec7 --profile cw --region us-east-1
+
+### lambda
+aws lambda list-functions --profile cw --region us-east-1
+
+index.js
+```
+exports.handler = async (event) => {
+    console.log("Event:", event);
+    return { statusCode: 200, body: "Hello from Lambda!" };
+};
+```
+manually zip index.js
+trust-policy.json
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": { "Service": "lambda.amazonaws.com" },
+    "Action": "sts:AssumeRole"
+  }]
+}
+```
+aws iam create-role \
+  --role-name lambda-execution-role \
+  --assume-role-policy-document file://trust-policy.json
+
+aws iam attach-role-policy \
+  --role-name lambda-execution-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+aws iam list-roles
+
+aws iam list-roles
+arn:aws:iam::121099113991:role/lambda-execution-role
+
+aws lambda create-function \
+  --function-name my-lambda-function \
+  --runtime nodejs18.x \
+  --role arn:aws:iam::121099113991:role/lambda-execution-role \
+  --handler index.handler \
+  --zip-file fileb://index.zip
+
+aws lambda get-function --function-name my-lambda-function
+
+aws lambda invoke \
+  --function-name my-lambda-function \
+  --payload '{}' \
+  response.json
+
+cat response.json
