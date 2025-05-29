@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const fileUpload = require('express-fileupload');
 const userRoute = require('../backend/routes/userRoute');
+const logger = require('./logger');
 
 const app = express();
 
@@ -25,6 +26,16 @@ app.use('/api/v1', user);
 app.use('/api/v1', product);
 app.use('/api/v1', order);
 app.use('/api/v1', payment);
+
+app.use((req, res, next) => {
+  logger.info(`Incoming request: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+app.use((req, res, next) => {
+  logger.warn(`404 Not Found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ error: 'Not Found' });
+});
 
 __dirname = path.resolve();
 if (process.env.NODE_ENV === 'production') {

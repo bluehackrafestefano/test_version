@@ -267,3 +267,52 @@ aws lambda invoke \
   response.json
 
 cat response.json
+
+### Logging
+
+Fluentd
+npm install winston
+npm start 
+
+- Create logger.js
+```js
+const { createLogger, format, transports } = require('winston');
+
+const logger = createLogger({
+  level: 'debug',
+  format: format.combine(
+    format.timestamp(),
+    format.simple()
+  ),
+  transports: [
+    new transports.File({ filename: 'app.log' }),
+    new transports.Console()
+  ],
+});
+
+module.exports = logger;
+```
+
+- that will create app.log file under proj dir
+
+backend/app.js
+```js
+app.use((req, res, next) => {
+  logger.info(`Incoming request: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+app.use((req, res, next) => {
+  logger.warn(`404 Not Found: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({ error: 'Not Found' });
+});
+```
+
+- replace in backend/server.js
+```js
+    console.log(`Error: ${err.message}`);
+```
+- to:
+```js
+    logger.info(`Server running on port ${PORT}`);
+```

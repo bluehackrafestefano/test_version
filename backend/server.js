@@ -1,3 +1,4 @@
+const logger = require('./logger');
 const app = require('./app');
 const connectDatabase = require('./config/database');
 const cloudinary = require('cloudinary');
@@ -5,7 +6,7 @@ const PORT = process.env.PORT || 3099;
 
 // UncaughtException Error
 process.on('uncaughtException', (err) => {
-    console.log(`Error: ${err.message}`);
+    logger.error(`Uncaught Exception: ${err.message}`);
     process.exit(1);
 });
 
@@ -18,10 +19,10 @@ cloudinary.config({
 });
 
 const server = app.listen(PORT, () => {
-    console.log(`Server running`)
+    logger.info(`Server running on port ${PORT}`);
 });
 
 // Unhandled Promise Rejection
 process.on('unhandledRejection', (err) => {
-    console.log(`Error: ${err.message}`);
+    logger.error(`Unhandled Rejection: ${err.message}`);
 });
